@@ -14,14 +14,27 @@ void print_solution(int *board, int length)
 	fprintf(stdout, "\n");
 }
 
+int absolute(int x, int y)
+{
+	if (x < 0)
+		x = -x;
+	if (y < 0)
+		y = -y;
+	return (x + y);
+}
+
 int is_valid(int *board, int row, int col, int length)
 {
 	int i = 0;
 
 	while(i < row)
 	{
-		
+		if (board[i] == col)
+			return (0);
+		if (absolute(board[i], i) == absolute(row, col))
+			return (0);
 	}
+	return (1);
 }
 
 
@@ -48,11 +61,11 @@ int main(int ac, char **av)
 		int length = atoi(av[1]);
 		int board[length];
 		int row = 0;
-		// nqueens(board, row, length);
-		board[0] = 1;
-		board[1] = 2;
-		board[2] = 3;
-		board[3] = 4;
-		print_solution(board, length);
+		nqueens(board, row, length);
+		// board[0] = 1;
+		// board[1] = 2;
+		// board[2] = 3;
+		// board[3] = 4;
+		// print_solution(board, length);
 	}
 }
