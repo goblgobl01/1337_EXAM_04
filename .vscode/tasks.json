@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build executable",
+			"type": "shell",
+			"command": "gcc /level_1/n_queens/my_nqueens.c",
+			"args": [
+				"-o",
+				"/level_1/n_queens/my_nqueens"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		}
+	]
+}
