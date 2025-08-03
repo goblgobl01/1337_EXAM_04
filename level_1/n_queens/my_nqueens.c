@@ -16,11 +16,9 @@ void print_solution(int *board, int length)
 
 int absolute(int x, int y)
 {
-	if (x < 0)
-		x = -x;
-	if (y < 0)
-		y = -y;
-	return (x + y);
+	if ((x - y) < 0)
+		return -(x - y);
+	return (x - y);
 }
 
 int is_valid(int *board, int row, int col, int length)
@@ -31,8 +29,11 @@ int is_valid(int *board, int row, int col, int length)
 	{
 		if (board[i] == col)
 			return (0);
-		if (absolute(board[i], i) == absolute(row, col))
+		int x = absolute(board[i], col);
+		int y = absolute(row, i);
+		if (x == y)
 			return (0);
+		i++;
 	}
 	return (1);
 }
