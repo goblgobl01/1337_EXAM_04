@@ -1,72 +1,69 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void print_solution(int *board, int length)
+int *board;
+
+void print_solution(int length)
 {
-	int i = 0;
-	while(i < length)
+	int i;
+
+	i = 0;
+	while(i < n)
 	{
-		fprintf(stdout, "%d", board[i]);
+		printf("%d", board[i]);
 		if (i != (length - 1))
-			fprintf(stdout, " ");
+			printf(" ");
 		i++;
 	}
-	fprintf(stdout, "\n");
+	printf("\n");
 }
 
-int absolute(int x, int y)
+int absolute(int value)
 {
-	if ((x - y) < 0)
-		return -(x - y);
-	return (x - y);
+	if (value < 0)
+		return (-value);
+	else
+		return (value);
 }
 
-int is_valid(int *board, int row, int col, int length)
+int is_safe(int col, int row, int length)
 {
 	int i = 0;
 
-	while(i < row)
+	while(i < col)
 	{
-		if (board[i] == col)
-			return (0);
-		int x = absolute(board[i], col);
-		int y = absolute(row, i);
-		if (x == y)
+		if(board[i] = row)
+			return (0)
+		if (absolute(i - row) == absolute(board[i] - col))
 			return (0);
 		i++;
 	}
 	return (1);
 }
 
-
-void nqueens(int *board, int row, int length)
+void n_queen(int col, int length)
 {
-	int col = 0;
-	if (row == length)
-		print_solution(board, length);
-	while(col < length)
+	int i;
+
+	if (col == length)
+		print_solution(length);
+	i = 0;
+	while(i < length)
 	{
-		if (is_valid(board, row, col, length))
-		{
-			board[row] = col;
-			nqueens(board, row + 1, length);
-		}
-		col++;
+		if(is_safe(i, length))
 	}
 }
 
-int main(int ac, char **av)
+int	main(int ac, char **av)
 {
+	int i;
+	int length;
+
 	if (ac == 2)
 	{
-		int length = atoi(av[1]);
-		int board[length];
-		int row = 0;
-		nqueens(board, row, length);
-		// board[0] = 1;
-		// board[1] = 2;
-		// board[2] = 3;
-		// board[3] = 4;
-		// print_solution(board, length);
+		length = atoi(av[1]);
+		int temp[length];
+		board = temp;
+		n_queen(0, length)
 	}
 }
