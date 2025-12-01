@@ -2,10 +2,11 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
-#include <stdlib.h> // change this to <stdlib.h>
 
-#define SUCCESS 1
-#define FAILURE -1
+
+//added
+#include <stdlib.h>
+#include <ctype.h>
 
 typedef struct	json {
 	enum {
@@ -85,6 +86,8 @@ void	free_json(json j)
 	}
 }
 
+
+
 void	serialize(json j)
 {
 	switch (j.type)
@@ -117,126 +120,151 @@ void	serialize(json j)
 	}
 }
 
-char *ft_strdup(char *s)
+char *ft_strdup(char *str)
 {
-	int len;
-	for (len=0; s[len]; len++);
-	char *new = (char *)malloc(sizeof(char) * len + 1);
-	if (!new) return (NULL);
-	for (int i=0; s[i]; i++) new[i] = s[i];
-	new[len] = 0;
-	return (new);
-}
+	int length;
+	char *ptr;
+	int i;
 
-int parse_integer(json *dst, FILE *stream)
-{
-	if (!fscanf(stream, "%d", &dst->integer))
-		return (unexpected(stream), FAILURE);
-	dst->type = INTEGER;
-	return (SUCCESS);
-}
-
-int parse_string(json *dst, pair *pair, FILE *stream)
-{
-	int c;
-	char buffer[7000];
-	int i = 0;
-
-	if (!expect(stream, '"')) return (FAILURE);
-	while (peek(stream) != '"' && peek(stream) != EOF)
+	for(length = 0; str[length]; length++);
+	ptr = malloc(length + 1);
+	if (ptr == NULL)
+		return (NULL);
+	i = 0;
+	while(i < length)
 	{
-		c = getc(stream);
-		if (c == '\\') c = getc(stream);
-		if (c == EOF) return (unexpected(stream), FAILURE);
-		buffer[i++] = c;
+		ptr[i] = str[i];
+		i++;
 	}
-	buffer[i] = 0;
-	if (!expect(stream, '"')) return (FAILURE);
-	if (dst)
+	ptr[i] = 0;
+	return (ptr);
+}
+
+int parse_integer(json *file, FILE *stream)
+{
+	int integer;
+	if (fscanf(stream, "%d", &integer) > 0)
 	{
-		dst->type = STRING;
-		dst->string = ft_strdup(buffer);
-		if (!dst->string) return (FAILURE);
+		file->type = INTEGER;
+		file->integer = integer;
+		return (1);
 	}
 	else
+		return (unexpected(stream), -1);
+}
+
+char *parse_string(FILE *stream)
+{
+	int i;
+	char buffer[10000];
+	char c;
+	char another_char;
+
+	i = 0;
+	if (!expect(stream, '"'))
+		return (NULL);
+	while(peek(stream) != '"' && peek(stream) != EOF)
 	{
-		pair->key = ft_strdup(buffer);
-		if (!pair->key) return (FAILURE);
+		c = getc(stream);
+		if (c == '\\')
+			c = getc(stream);
+		if (c == EOF)
+			return (unexpected(stream), NULL);
+		buffer[i] = c;
+		i++;
 	}
-	return (SUCCESS);
+	if (!expect(stream, '"'))
+		return (NULL);
+	buffer[i] = 0;
+	return (ft_strdup(buffer));
 }
 
-int free_pairs(pair *pairs, int count)
+int parse_map(json *file, FILE *stream)
 {
-	if (!pairs)
-		return (FAILURE);
-	for (int i = 0; i < count; i++)
-	{
-		if (pairs[i].key)
-			free(pairs[i].key);
-		free_json(pairs[i].value);
-	}
-	free(pairs);
-	return (FAILURE);
-}
-
-void init_pair(pair *pair)
-{
-	pair->key = NULL;
-	pair->value.string = NULL;
-	pair->value.map.data = NULL;
-}
-
-int parse_map(json *dst, FILE *stream)
-{
-	int pair_num = 0;
-	pair *pairs = NULL;
+	char *str;
+	int i;
+	pair *pairs;
+	char c;
+	int value;
 
 	if (!expect(stream, '{'))
-		return (free_pairs(pairs, pair_num));
-	while (peek(stream) != '}' && peek(stream) != EOF)
+			return (-1);
+	file->map.data = NULL;
+	file->map.size = 0;
+	file->type = MAP;
+	i = 0;
+	while(peek(stream) != '}')
 	{
-		pair_num++;
-		pairs = (pair *)realloc(pairs, sizeof(pair) * pair_num);
-		if (!pairs)
-			return (FAILURE);
-		init_pair(&pairs[pair_num - 1]);
-		if (parse_string(NULL, &pairs[pair_num - 1], stream) == FAILURE)
-			return (free_pairs(pairs, pair_num));
+		str = parse_string(stream);
+		if (str)
+		{
+			pairs = realloc(file->map.data, (i + 1) * sizeof(struct pair));
+			file->map.data = pairs;
+			file->map.data[i].key = str;
+		}
+		else
+			return (-1);
 		if (!expect(stream, ':'))
-			return (free_pairs(pairs, pair_num));
-		if (argo(&(pairs[pair_num - 1]).value, stream) == FAILURE)
-			return (free_pairs(pairs, pair_num));
-		if (peek(stream) != '}' && !expect(stream, ','))
-			return (free_pairs(pairs, pair_num));
+			return (-1);
+		if (peek(stream) == '{')
+		{
+			if (parse_map(&file->map.data[i].value, stream) == -1)
+				return (-1);
+		}
+		else if(peek(stream) == '"')
+		{
+			str = parse_string(stream);
+			if (str)
+			{
+				file->map.data[i].value.type = STRING;
+				file->map.data[i].value.string = str;
+			}
+			else
+				return (-1);
+		}
+		else if(isdigit(peek(stream)))
+		{
+			value = parse_integer(&file->map.data[i].value, stream);
+			c = peek(stream);
+		}
+		if (peek(stream) != '}')
+		{
+			if (!expect(stream, ','))
+				return (-1);
+		}
+		i++;
 	}
-	if (!expect(stream, '}'))
-		return (free_pairs(pairs, pair_num));
-	dst->type = MAP;
-	dst->map.data = pairs;
-	dst->map.size = pair_num;
-	return (SUCCESS);
+	file->map.size = i;
+	return (1);
 }
 
-int	argo(json *dst, FILE *stream)
+int argo(json *file, FILE *stream)
 {
-	int c = peek(stream);
-
-	if (c == '"')
-		return (parse_string(dst, NULL, stream));
-	if (c == '{')
-		return (parse_map(dst, stream));
-	if (isdigit(c) || c == '+' || c == '-')
-		return (parse_integer(dst, stream));
-	return (unexpected(stream), FAILURE);
+	char *str;
+	if (isdigit(peek(stream)))
+		return (parse_integer(file, stream));
+	if (peek(stream) == '"')
+	{
+		str = parse_string(stream);
+		if (str)
+		{
+			file->type = STRING;
+			file->string  = str;
+			return (1);
+		}
+		else
+			return (-1);
+	}
+	if (peek(stream) == '{')
+		return (parse_map(file, stream));
 }
 
 int	main(int argc, char **argv)
 {
-	if (argc != 2)
-		return 1;
-	char *filename = argv[1];
-	FILE *stream = fopen(filename, "r");
+	// if (argc != 2)
+	// 	return 1;
+	// char *filename = argv[1];
+	FILE *stream = fopen("file.txt", "r");
 	json	file;
 	if (argo (&file, stream) != 1)
 	{
